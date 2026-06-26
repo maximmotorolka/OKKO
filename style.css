@@ -1,10 +1,7 @@
-div:nth-child(10),
-.khj-entry-tag,
-.inner,
-.audio-center-promotion,
-#icon-server-search,
+div:nth-child(10) > div.chuanyu-modal-container.kaihei-modal-animate,
 #channel-list-container > div.channel-list-container-wrapper.channel-list-scroll-bar > div.channel-list-container.virtual-scroll-viewport:last-child > div:first-child,
-#root > div.win-wapper:last-child > div.win-title-bar:first-child > div.win-title-inner:last-child > div.left:first-child > div.khj-entry-tag:last-child,
-#root > div.win-wapper:last-child > div.app-main-wrapper:last-child > div.app-main-container:first-child > div.content-wrapper-box.app-content-wrapper:first-child > div.content-wrapper > div.server-left-container:first-child > div.audio-box-container.noselect:last-child > div.audio-box.theme-audio-box-bg > div.audio-center-promotion.theme-dark:first-child {
+.khj-entry-tag,
+.audio-center-promotion,
+#icon-server-search {
     display: none !important;
 }
