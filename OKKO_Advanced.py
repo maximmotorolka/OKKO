@@ -6,10 +6,10 @@ import sys
 import subprocess
 from websocket import create_connection
 
-# 💡 1. 远程 GitHub 规则地址（同步更新为你最酷的新仓库名）
+# 💡 1. 远程 GitHub 规则地址
 GITHUB_CSS_URL = "https://raw.githubusercontent.com/NoC486/OKKO/refs/heads/main/style.css"
 
-# 💡 2. 精准定位当前运行的目录（兼容 .py 和 .exe 打包环境）
+# 💡 2. 精准定位当前运行的目录
 if getattr(sys, 'frozen', False):
     BASE_DIR = os.path.dirname(os.path.abspath(sys.executable))
 else:
@@ -51,7 +51,7 @@ def init_css_rules():
             print("[-] 严重警告：云端拉取失败且本地无备份文件，本次运行将缺乏去广告规则！")
             return
 
-    # 将样式清洗并封装，一劳永逸存入内存变量
+    # 将样式清洗并封装
     css = css_content.replace("\n", " ").replace('"', '\\"')
     CACHED_JS_CODE = f'if(!window.__ad_rules_loaded){{const s = document.createElement("style"); s.textContent = "{css}"; document.head.appendChild(s); window.__ad_rules_loaded=true;}}'
 
@@ -66,23 +66,37 @@ def check_kook_process_alive():
     return False
 
 def inject_to_kook():
-    """注入函数，不再请求网络，直接使用内存中的规则"""
+    """自适应 Origin 注入函数"""
     global CACHED_JS_CODE
     if not CACHED_JS_CODE:
         return False
 
     try:
-        res = requests.get("http://localhost:9222/json", timeout=2).json()
+        res = requests.get("http://127.0.0.1:9222/json", timeout=2).json()
         injected = False
+        
         for t in res:
             ws_url = t.get("webSocketDebuggerUrl")
+            page_url = t.get("url", "")
+            
+            # 只有当类型是 page 且能拿到 webSocketDebuggerUrl 时才处理
             if ws_url and t.get("type") == "page":
+                # 🌟 核心优化：动态解析当前页面的真实 Origin（完美兼容 /app/ 后面跟任意路径的情况）
+                current_origin = "http://localhost:5890"  # 默认保底值
+                if "://" in page_url:
+                    if "/app/" in page_url:
+                        # 比如从 http://localhost:5888/app/channels 提取出 http://localhost:5888
+                        current_origin = page_url.split("/app/")[0]
+                    else:
+                        # 兜底：如果连 /app/ 都没有，则直接切前三段
+                        current_origin = "/".join(page_url.split("/")[:3])
+                
                 try:
                     ws = create_connection(
                         ws_url, 
                         timeout=2,
                         suppress_origin=True,
-                        header=["Origin: http://localhost:5890"]
+                        header=[f"Origin: {current_origin}"]  # 🎯 动态填入提取出的真实 Origin
                     )
                     ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate", "params": {"expression": CACHED_JS_CODE}}))
                     ws.send(json.dumps({"id": 2, "method": "Page.addScriptToEvaluateOnNewDocument", "params": {"source": CACHED_JS_CODE}}))
@@ -98,17 +112,17 @@ def main():
     print("[*] OKKO 增强盾启动...")
     print(f"[*] 预设宿主路径: {KOOK_PATH}")
     
-    # 1. 仅在入口处执行一次规则初始化
     init_css_rules()
     
-    # 2. 首次拉起托管
+    # 首次拉起托管
     try:
-        requests.get("http://localhost:9222/json", timeout=1)
+        requests.get("http://127.0.0.1:9222/json", timeout=1)
         is_first_start = False
     except requests.exceptions.RequestException:
         if os.path.exists(KOOK_PATH):
             print("[*] 正在拉起宿主客户端...")
-            os.system(f'start "" "{KOOK_PATH}" --remote-debugging-port=9222 --remote-allow-origins=*')
+            cmd = [KOOK_PATH, "--remote-debugging-port=9222", "--remote-allow-origins=*"]
+            subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE, close_fds=True)
             is_first_start = True
             time.sleep(8)
         else:
@@ -116,15 +130,12 @@ def main():
             time.sleep(5)
             return
 
-    # 3. 进入高效盯梢死循环
     while True:
-        # 同步生死自杀机制
         if not is_first_start and not check_kook_process_alive():
             print("[*] 检测到宿主客户端已关闭，插件正在退出...")
             sys.exit(0)
             
         success = inject_to_kook()
-        
         if success:
             is_first_start = False
             print("[*] 规则注入成功，看守中...")
