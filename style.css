@@ -1,7 +1,7 @@
 div:nth-child(10) > div.chuanyu-modal-container.kaihei-modal-animate,
-#channel-list-container > div.channel-list-container-wrapper.channel-list-scroll-bar > div.channel-list-container.virtual-scroll-viewport:last-child > div:first-child,
+.mixed-ad-carousel-wrapper,
 .khj-entry-tag,
 .audio-center-promotion,
-#icon-server-search {
+#icon-server-search > div.icon-button-wrap {
     display: none !important;
 }
