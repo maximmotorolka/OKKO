@@ -2,6 +2,6 @@ div:nth-child(10) > div.chuanyu-modal-container.kaihei-modal-animate,
 .mixed-ad-carousel-wrapper,
 .khj-entry-tag,
 .audio-center-promotion,
-#icon-server-search > div.icon-button-wrap {
+#icon-server-search {
     display: none !important;
 }
