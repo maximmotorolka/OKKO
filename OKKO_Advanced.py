@@ -59,18 +59,8 @@ def init_css_rules():
 
     print("[-] 严重警告：本地无文件且云端获取失败，本次运行将缺乏去广告规则！")
 
-def check_kook_process_alive():
-    """检测 Windows 系统中 KOOK.exe 是否还在运行"""
-    try:
-        output = subprocess.check_output('tasklist /FI "IMAGENAME eq KOOK.exe"', shell=True).decode('gbk', errors='ignore')
-        if "KOOK.exe" in output:
-            return True
-    except Exception:
-        pass
-    return False
-
 def inject_to_kook():
-    """自适应 Origin 注入函数"""
+    """自适应 Origin 注入函数（增加了对核心 /app/ 路由的强校验）"""
     global CACHED_JS_CODE
     if not CACHED_JS_CODE:
         return False
@@ -78,18 +68,21 @@ def inject_to_kook():
     try:
         res = requests.get("http://127.0.0.1:9222/json", timeout=2).json()
         injected = False
+        has_app_page = False  # 标记是否捕获到了真正加载完的应用主界面
         
         for t in res:
             ws_url = t.get("webSocketDebuggerUrl")
             page_url = t.get("url", "")
             
             if ws_url and t.get("type") == "page":
+                # 🎯 核心逻辑优化：只有当 URL 包含 "/app/" 时，才判定为主界面渲染成功
+                if "/app/" not in page_url:
+                    continue
+                
+                has_app_page = True
                 current_origin = "http://localhost:5890"
                 if "://" in page_url:
-                    if "/app/" in page_url:
-                        current_origin = page_url.split("/app/")[0]
-                    else:
-                        current_origin = "/".join(page_url.split("/")[:3])
+                    current_origin = page_url.split("/app/")[0]
                 
                 try:
                     ws = create_connection(
@@ -104,7 +97,9 @@ def inject_to_kook():
                     injected = True
                 except Exception:
                     continue
-        return injected
+                    
+        # 只有在找到了主页面，并且注入成功的情况下才返回 True
+        return injected and has_app_page
     except Exception:
         return False
 
@@ -112,20 +107,18 @@ def main():
     print("[*] OKKO 增强盾 启动...")
     print(f"[*] 预设宿主路径: {KOOK_PATH}")
     
-    # 💡 核心修改：检测接口是否已经开放
+    # 检测接口是否已经开放
     try:
         requests.get("http://127.0.0.1:9222/json", timeout=1)
-        # 🎯 如果走到这里，说明已经有 KOOK 和旧的 okko 守护进程在后台了
+        # 如果走到这里，说明已经有 KOOK 运行在后台或托盘了
         print("[*] 检测到 KOOK 已在后台/托盘运行。")
         
         if os.path.exists(KOOK_PATH):
             print("[*] 正在通过原生客户端唤醒托盘界面...")
-            # 🎯 直接运行 KOOK.exe。触发它的单例唤醒机制，让它自己安全地把窗口弹出来并恢复交互！
             subprocess.Popen([KOOK_PATH], creationflags=subprocess.CREATE_NEW_CONSOLE, close_fds=True)
         else:
             print(f"[-] 警告：未在指定目录找到宿主客户端，无法协助呼出窗口。")
             
-        # 完成唤醒动作后，当前重复运行的新 okko 进程直接功成身退
         print("[*] 唤醒信号已发送，当前新 okko 进程退出。")
         time.sleep(1)
         sys.exit(0)
@@ -136,30 +129,30 @@ def main():
             print("[*] 正在冷启动拉起宿主客户端...")
             cmd = [KOOK_PATH, "--remote-debugging-port=9222", "--remote-allow-origins=*"]
             subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE, close_fds=True)
-            is_first_start = True
         else:
             print(f"[-] 严重错误：未在指定目录找到宿主客户端！")
             time.sleep(5)
             return
 
-    # 第一次启动时，利用空档期载入或同步 CSS 规则
+    # 第一次启动时，利用客户端初始化的空档期载入或同步 CSS 规则
     init_css_rules()
     
-    if is_first_start:
-        print("[*] 正在等待宿主客户端初始化完毕...")
-        time.sleep(7)
-
+    # 🎯 核心修改：死等主界面（/app/...）出来，直到成功注入后才放手
+    print("[*] 正在看守并等待 KOOK 应用主界面渲染成功...")
+    retry_count = 0
     while True:
-        if not is_first_start and not check_kook_process_alive():
-            print("[*] 检测到宿主客户端已关闭，插件正在退出...")
-            sys.exit(0)
+        retry_count += 1
+        if inject_to_kook():
+            print(f"[+] 检测到核心业务组件已就绪，广告成功抹除！(耗时约 {retry_count} 秒)")
+            break
+        time.sleep(1)
             
-        success = inject_to_kook()
-        if success:
-            is_first_start = False
-            print("[*] 规则注入成功，看守中...")
-            
-        time.sleep(10)
+    print("[*] OKKO 已完美执行单次去广告任务，进程优雅退出。")
+    time.sleep(1)
+    sys.exit(0)
+
+def __main__():
+    main()
 
 if __name__ == "__main__":
     main()
