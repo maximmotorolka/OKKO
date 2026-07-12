@@ -59,8 +59,21 @@ def init_css_rules():
 
     print("[-] 严重警告：本地无文件且云端获取失败，本次运行将缺乏去广告规则！")
 
+def is_kook_ui_ready():
+    """仅检测检测应用核心 UI 是否已经加载出来，不做任何注入"""
+    try:
+        res = requests.get("http://127.0.0.1:9222/json", timeout=1).json()
+        for t in res:
+            page_url = t.get("url", "")
+            if t.get("webSocketDebuggerUrl") and t.get("type") == "page":
+                if "/app/" in page_url:
+                    return True
+    except Exception:
+        pass
+    return False
+
 def inject_to_kook():
-    """自适应 Origin 注入函数（增加了对核心 /app/ 路由的强校验）"""
+    """自适应 Origin 注入函数"""
     global CACHED_JS_CODE
     if not CACHED_JS_CODE:
         return False
@@ -68,18 +81,15 @@ def inject_to_kook():
     try:
         res = requests.get("http://127.0.0.1:9222/json", timeout=2).json()
         injected = False
-        has_app_page = False  # 标记是否捕获到了真正加载完的应用主界面
         
         for t in res:
             ws_url = t.get("webSocketDebuggerUrl")
             page_url = t.get("url", "")
             
             if ws_url and t.get("type") == "page":
-                # 🎯 核心逻辑优化：只有当 URL 包含 "/app/" 时，才判定为主界面渲染成功
                 if "/app/" not in page_url:
                     continue
                 
-                has_app_page = True
                 current_origin = "http://localhost:5890"
                 if "://" in page_url:
                     current_origin = page_url.split("/app/")[0]
@@ -97,9 +107,7 @@ def inject_to_kook():
                     injected = True
                 except Exception:
                     continue
-                    
-        # 只有在找到了主页面，并且注入成功的情况下才返回 True
-        return injected and has_app_page
+        return injected
     except Exception:
         return False
 
@@ -110,7 +118,6 @@ def main():
     # 检测接口是否已经开放
     try:
         requests.get("http://127.0.0.1:9222/json", timeout=1)
-        # 如果走到这里，说明已经有 KOOK 运行在后台或托盘了
         print("[*] 检测到 KOOK 已在后台/托盘运行。")
         
         if os.path.exists(KOOK_PATH):
@@ -124,7 +131,6 @@ def main():
         sys.exit(0)
         
     except requests.exceptions.RequestException:
-        # 如果接口没开，说明是全系统第一次运行，走正常初始化拉起逻辑
         if os.path.exists(KOOK_PATH):
             print("[*] 正在冷启动拉起宿主客户端...")
             cmd = [KOOK_PATH, "--remote-debugging-port=9222", "--remote-allow-origins=*"]
@@ -134,25 +140,29 @@ def main():
             time.sleep(5)
             return
 
-    # 第一次启动时，利用客户端初始化的空档期载入或同步 CSS 规则
+    # 第一次启动时，载入或同步 CSS 规则
     init_css_rules()
     
-    # 🎯 核心修改：死等主界面（/app/...）出来，直到成功注入后才放手
-    print("[*] 正在看守并等待 KOOK 应用主界面渲染成功...")
-    retry_count = 0
+    # 🎯 核心逻辑重构：双重保险
+    print("[*] 正在侦测 KOOK 主界面渲染状态...")
     while True:
-        retry_count += 1
-        if inject_to_kook():
-            print(f"[+] 检测到核心业务组件已就绪，广告成功抹除！(耗时约 {retry_count} 秒)")
+        if is_kook_ui_ready():
+            # 🔔 找到了主界面！此时 KOOK 刚刚渲染完主 DOM。
+            # 为了防止干扰它加载底层 C++ node 模块，我们在这里原地安全等待 4 秒钟
+            print("[+] 检测到应用主界面已现身，为确保原生模块安全加载，稳健等待 4 秒...")
+            time.sleep(4)
             break
-        time.sleep(1)
+        time.sleep(1) # 降低冷启动时的探测频率（每秒只查一次，不给主进程制造压力）
             
-    print("[*] OKKO 已完美执行单次去广告任务，进程优雅退出。")
+    # 安全期满，果断进场单次注入
+    if inject_to_kook():
+        print("[+] 广告规则已成功无痕注入！")
+    else:
+        print("[-] 提示：未找到满足条件的注入目标。")
+            
+    print("[*] OKKO 任务已安全完成，进程优雅退出。")
     time.sleep(1)
     sys.exit(0)
-
-def __main__():
-    main()
 
 if __name__ == "__main__":
     main()
