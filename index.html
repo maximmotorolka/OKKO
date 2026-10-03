@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>okko — кино и сериалы</title>
+<style>
+:root{--bg:#0b0b0f;--bg2:#121218;--card:#17171f;--line:#26262f;--txt:#f5f5f7;--mut:#9a9aa5;--acc:#ff3b52;--acc2:#ff6b3b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+.announce{background:linear-gradient(90deg,#3b0d16,#1c0509);color:#ffd9de;text-align:center;padding:8px 16px;font-size:13px;border-bottom:1px solid #3a1019}
+.announce.hidden{display:none}
+header{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:22px;padding:0 28px;height:64px;background:rgba(11,11,15,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.logo{font-size:26px;font-weight:800;color:#fff;white-space:nowrap;cursor:pointer}
+.logo b{color:var(--acc)}
+nav{display:flex;gap:4px;flex:1}
+nav a{padding:8px 13px;border-radius:8px;font-size:14px;color:var(--mut);transition:.15s}
+nav a:hover{color:#fff;background:rgba(255,255,255,.06)}
+nav a.on{color:#fff;background:rgba(255,59,82,.16)}
+#search{background:var(--bg2);border:1px solid var(--line);border-radius:20px;color:#fff;padding:9px 16px;width:250px;font-size:14px;outline:none;transition:.15s}
+#search:focus{border-color:var(--acc);width:300px}
+.userbox{display:flex;align-items:center;gap:10px}
+.btn-login{background:var(--acc);border:none;color:#fff;font-weight:700;font-size:14px;padding:9px 18px;border-radius:20px}
+.btn-login:hover{filter:brightness(1.12)}
+.userchip{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:5px 12px 5px 5px;font-size:14px}
+.avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff}
+.logout{background:none;border:none;color:var(--mut);font-size:15px}
+.logout:hover{color:#fff}
+#hero{position:relative;min-height:70vh;display:flex;align-items:flex-end;padding:60px 48px 48px}
+#hero .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,11,15,.25) 0%,rgba(11,11,15,.6) 55%,var(--bg) 100%)}
+.hero-in{position:relative;max-width:740px}
+.hero-tag{display:inline-block;background:rgba(255,59,82,.18);border:1px solid rgba(255,59,82,.45);color:#ff98a5;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:14px;margin-bottom:16px}
+#hero h1{font-size:52px;line-height:1.05;font-weight:800;margin-bottom:14px;text-shadow:0 4px 30px rgba(0,0,0,.6)}
+.meta{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;font-size:14px;color:var(--mut)}
+.meta .chip{background:rgba(255,255,255,.08);border:1px solid var(--line);padding:4px 12px;border-radius:14px}
+.meta .star{color:#ffd166;font-weight:700}
+#hero p{color:#d6d6de;font-size:16px;line-height:1.55;max-width:640px;margin-bottom:26px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn-play{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,var(--acc),var(--acc2));border:none;color:#fff;font-size:16px;font-weight:700;padding:13px 28px;border-radius:26px;transition:.15s}
+.btn-play:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(255,59,82,.35)}
+.btn-ghost{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid var(--line);color:#fff;font-size:15px;font-weight:600;padding:13px 22px;border-radius:26px}
+.btn-ghost:hover{background:rgba(255,255,255,.14)}
+.btn-ghost.inlist{border-color:rgba(255,59,82,.5);color:#ff98a5}
+main{padding-bottom:40px}
+.section{padding:24px 48px 0}
+.section h2{font-size:21px;font-weight:800;margin-bottom:14px}
+.row{display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;scrollbar-width:thin;scrollbar-color:#333 transparent}
+.row::-webkit-scrollbar{height:8px}
+.row::-webkit-scrollbar-thumb{background:#2c2c36;border-radius:4px}
+.card{flex:0 0 250px;aspect-ratio:16/9;border-radius:12px;position:relative;overflow:hidden;cursor:pointer;border:1px solid var(--line);transition:.18s}
+.card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 14px 40px rgba(0,0,0,.55);border-color:#3a3a46}
+.card .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:14px}
+.card .ph .t{font-size:19px;font-weight:800;line-height:1.2;text-shadow:0 2px 14px rgba(0,0,0,.7)}
+.card .ph .g{font-size:11px;color:rgba(255,255,255,.72);margin-top:8px;letter-spacing:1px;text-transform:uppercase}
+.badge{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);color:#ffd166;font-size:12px;font-weight:700;padding:3px 8px;border-radius:10px;z-index:2}
+.flag{position:absolute;top:10px;left:10px;background:rgba(255,59,82,.92);color:#fff;font-size:10px;font-weight:800;letter-spacing:1px;padding:3px 8px;border-radius:8px;text-transform:uppercase;z-index:2}
+.card .playov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);opacity:0;transition:.15s}
+.card:hover .playov{opacity:1}
+.playov span{width:52px;height:52px;border-radius:50%;background:rgba(255,59,82,.95);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;padding-left:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;padding-bottom:20px}
+.grid .card{flex:none;width:auto}
+.empty{color:var(--mut);text-align:center;padding:60px 20px;font-size:15px}
+footer{border-top:1px solid var(--line);margin-top:30px;padding:34px 48px 26px;color:var(--mut);font-size:13px}
+.f-in{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}
+.f-col{display:flex;flex-direction:column;gap:8px;min-width:130px}
+.f-col b{color:#fff;font-size:14px;margin-bottom:2px}
+.f-col a:hover{color:#fff}
+.f-bottom{margin-top:26px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px}
+.f-admin{color:#ff98a5;cursor:pointer}
+.f-admin:hover{text-decoration:underline}
+.modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(5,5,8,.78);backdrop-filter:blur(6px);padding:20px}
+.modal.open{display:flex}
+.mbox{background:var(--card);border:1px solid var(--line);border-radius:16px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;padding:28px;position:relative}
+.mbox.wide{max-width:980px;padding:22px}
+.mclose{position:absolute;top:12px;right:14px;background:rgba(0,0,0,.4);border:1px solid var(--line);color:#fff;width:34px;height:34px;border-radius:50%;font-size:16px;z-index:5}
+.mclose:hover{background:rgba(255,59,82,.3)}
+.mbox h3{font-size:22px;margin-bottom:6px}
+.msub{color:var(--mut);font-size:13px;margin-bottom:20px}
+label{display:block;font-size:13px;color:var(--mut);margin:14px 0 6px}
+input[type=text],input[type=password],select{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:10px;color:#fff;padding:11px 14px;font-size:14px;outline:none}
+input:focus,select:focus{border-color:var(--acc)}
+.mbtn{width:100%;margin-top:20px;background:linear-gradient(90deg,var(--acc),var(--acc2));border:none;color:#fff;font-size:15px;font-weight:700;padding:12px;border-radius:12px}
+.mbtn.sec{background:var(--bg2);border:1px solid var(--line);font-weight:600}
+.merr{color:#ff7b8a;font-size:13px;margin-top:10px;min-height:16px}
+.m-logo{text-align:center;font-size:30px;font-weight:800;margin-bottom:4px}
+.m-logo b{color:var(--acc)}
+.m-adv{text-align:center;color:var(--mut);font-size:13px;margin-bottom:18px}
+.d-rows{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.d-poster{height:200px;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;margin-bottom:18px;position:relative;overflow:hidden}
+.d-poster .t{font-size:26px;font-weight:800;text-shadow:0 3px 18px rgba(0,0,0,.7)}
+.d-poster .badge{top:12px;right:12px}
+.d-desc{color:#c9c9d2;line-height:1.6;font-size:14px;margin-bottom:20px}
+.d-btns{display:flex;gap:10px;flex-wrap:wrap}
+.d-btns .btn-play{padding:11px 22px;font-size:15px}
+.d-btns .btn-ghost{padding:11px 20px;font-size:14px}
+#playerM video{width:100%;border-radius:12px;background:#000;aspect-ratio:16/9;display:block}
+.p-note{color:var(--mut);font-size:12.5px;margin-top:12px;line-height:1.5}
+.p-title{font-size:17px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.p-title .star{color:#ffd166}
+@media(max-width:900px){
+nav{display:none}
+#search{width:150px;flex:1}
+#search:focus{width:150px}
+#hero{padding:40px 22px 34px;min-height:58vh}
+#hero h1{font-size:34px}
+.section,footer{padding-left:22px;padding-right:22px}
+}
+</style>
+</head>
+<body>
+<div id="announce" class="announce hidden"></div>
+<header>
+  <a class="logo" id="logoEl"><b>ok</b>ko</a>
+  <nav id="nav">
+    <a data-cat="trending" class="on">В тренде</a>
+    <a data-cat="new">Новинки</a>
+    <a data-cat="series">Сериалы</a>
+    <a data-cat="animation">Мультфильмы</a>
+    <a data-cat="horror">Хорроры</a>
+    <a data-cat="mylist">Мой список</a>
+  </nav>
+  <input id="search" type="text" placeholder="Поиск фильмов и сериалов…">
+  <div class="userbox" id="userbox"></div>
+</header>
+<main>
+  <section id="hero"></section>
+  <div id="rowsWrap"></div>
+  <section class="section" id="gridSec" style="display:none">
+    <h2 id="gridTitle"></h2>
+    <div class="grid" id="grid"></div>
+  </section>
+</main>
+<footer>
+  <div class="f-in">
+    <div class="f-col"><b>okko</b><a href="#">О сервисе</a><a href="#">Помощь</a><a href="#">Приложения</a></div>
+    <div class="f-col"><b>Каталог</b><a href="#" data-go="trending">В тренде</a><a href="#" data-go="series">Сериалы</a><a href="#" data-go="horror">Хорроры</a></div>
+    <div class="f-col"><b>Аккаунт</b><a href="#" id="fAccount">Войти</a><a href="#" data-go="mylist">Мой список</a></div>
+    <div class="f-col"><b>Право</b><a href="#">Соглашение</a><a href="#">Конфиденциальность</a></div>
+  </div>
+  <div class="f-bottom">
+    <span>© 2026 okko — демо-клон в стиле okko.tv. Неофициальный проект, без аффилиации с оригиналом; каталог демонстрационный.</span>
+    <span class="f-admin" id="fAdmin">⚙ Админка</span>
+  </div>
+</footer>
+<div class="modal" id="loginM">
+  <div class="mbox">
+    <button class="mclose" onclick="closeM('loginM')">✕</button>
+    <div class="m-logo"><b>ok</b>ko</div>
+    <div class="m-adv">Войдите, чтобы вести «Мой список» и открыть настройки</div>
+    <form onsubmit="doLogin(event)">
+      <label>Логин</label>
+      <input type="text" id="liLogin" autocomplete="username">
+      <label>Пароль</label>
+      <input type="password" id="liPass" autocomplete="current-password">
+      <button class="mbtn" type="submit">Войти</button>
+      <div class="merr" id="liErr"></div>
+    </form>
+  </div>
+</div>
+<div class="modal" id="cardM">
+  <div class="mbox">
+    <button class="mclose" onclick="closeM('cardM')">✕</button>
+    <div id="cardBody"></div>
+  </div>
+</div>
+<div class="modal" id="playerM">
+  <div class="mbox wide">
+    <button class="mclose" onclick="stopPlayer()">✕</button>
+    <div class="p-title"><span id="pTitle"></span><span class="star" id="pYear"></span></div>
+    <video id="playerV" controls playsinline>
+      <source src="https://archive.org/download/nosferatu-2000sdvd/Nosferatu%20original.mp4" type="video/mp4">
+    </video>
+    <div class="p-note">Демо-режим проигрывания: для всех позиций каталога показывается публичный доменный фильм «Носферату» (1922, Archive.org). Потоки okko.tv в демо не включены — права на контент принадлежат платформе.</div>
+  </div>
+</div>
+<div class="modal" id="admM">
+  <div class="mbox">
+    <button class="mclose" onclick="closeM('admM')">✕</button>
+    <h3>⚙ Админка</h3>
+    <div class="msub">Настройки демо-сайта. Хранятся локально в браузере (localStorage).</div>
+    <form onsubmit="saveCfg(event)">
+      <label>Название сайта (логотип)</label>
+      <input type="text" id="cName" maxlength="14">
+      <label>Анонс (строка под шапкой, пусто = скрыта)</label>
+      <input type="text" id="cAnn" maxlength="160">
+      <label>Фильм в большом баннере (hero)</label>
+      <select id="cFeat"></select>
+      <button class="mbtn" type="submit">Сохранить</button>
+      <button class="mbtn sec" type="button" onclick="resetCfg()">Сбросить по умолчанию</button>
+      <div class="merr" id="cErr"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================= КАТАЛОГ (демонстрационные данные) ================= */
+var MOVIES = [
+  {id:"dune2",    t:"Дюна: Часть вторая",     y:2024, type:"film",  g:"Фантастика", r:8.6, c1:"#8a5a2b", c2:"#120a03", d:"Пол Атрейдес объединяется с фраминганцами, чтобы отомстить за семью и предотвратить грядущую катастрофу. Пророчество становится реальностью."},
+  {id:"oppen",   t:"Оппенгеймер",             y:2023, type:"film",  g:"Драма",      r:8.4, c1:"#b03a2e", c2:"#0a0505", d:"История физика Роберта Оппенгеймера, который стал творцом атомной бомбы — и человеком, осознавшим цену этого открытия."},
+  {id:"power",   t:"Власть пса",               y:2021, type:"film",  g:"Драма",      r:8.1, c1:"#4a5d43", c2:"#0c110a", d:"Хрупкие отношения братьев на ранчо в Монтане дают трещину, когда один из них привозит домой новую жену."},
+  {id:"poor",    t:"Бедные и красивые",        y:2023, type:"film",  g:"Драма",      r:8.0, c1:"#7d3c98", c2:"#150a1e", d:"Невероятное путешествие Беллы Бакс в поисках свободы — от лаборатории учёного до афинского суда."},
+  {id:"brut",    t:"Бруталист",                y:2025, type:"film",  g:"Драма",      r:8.2, c1:"#5d6d7e", c2:"#0a0d12", d:"Венгерский архитектор-еврей Ласло Тойтс начинает новую жизнь в Америке 1950-х, но прошлое догоняет его."},
+  {id:"concl",   t:"Конклав",                  y:2024, type:"film",  g:"Триллер",    r:7.6, c1:"#2c3e50", c2:"#05070a", d:"После внезапной смерти папы Римский конклав должен выбрать нового главу католической церкви. Ватикан оказывается на грани раскола."},
+  {id:"room",    t:"Комната по соседству",     y:2024, type:"film",  g:"Драма",      r:7.8, c1:"#b03a2e", c2:"#140606", d:"Две лучшие подруги сталкиваются с вопросом, который задаёт каждый: чего ты боишься больше — жизни или смерти?"},
+  {id:"pain",    t:"Реальная боль",            y:2024, type:"film",  g:"Драма",      r:7.7, c1:"#ca6f1e", c2:"#170d02", d:"Два брата-еврея отправляются в поминальное путешествие по Польше — и обнаруживают, что их дружба сильнее, чем они думали."},
+  {id:"lotus",   t:"Белый лотос",              y:2025, type:"series",g:"Драма",      r:8.1, c1:"#839192", c2:"#1a1a2e", d:"Третий сезон: группа гостей прибывает на роскошное курорто-уединение на Таити, где отдых оборачивается борьбой за выживание и за себя самих."},
+  {id:"andor",   t:"Андор",                    y:2025, type:"series",g:"Фантастика", r:8.4, c1:"#1f2a36", c2:"#0a0d12", d:"Шпионский триллер о Кассяне Андоре и его переходе от наёмника в ряды повстанцев против Галактической империи."},
+  {id:"lotus2",  t:"Последние из нас",        y:2023, type:"series",g:"Драма",      r:8.7, c1:"#6e8b3d", c2:"#0c1207", d:"Наёмник Джоэл и сирота Элли пересекают постапокалиптическую Америку, не зная, что выживание меняет их обоих."},
+  {id:"shogun",  t:"Сёгун",                    y:2024, type:"series",g:"Драма",      r:8.6, c1:"#a93226", c2:"#0a0505", d:"Английский моряк Джон Блэкторн попадает в Японию эпохи сёгунов, где политические интриги решают судьбы империи."},
+  {id:"spider",  t:"Паутина: за пределом Паука",y:2023,type:"film",  g:"Мультфильм", r:8.6, c1:"#e74c3c", c2:"#154360", d:"Майлс Моралес и Гвен Стейси отправляются в путешествие по мультивселенной, где встречаются с другими версиями пауков."},
+  {id:"kung",    t:"Кунг-фу Панда 4",          y:2024, type:"film",  g:"Мультфильм", r:7.3, c1:"#d4ac0d", c2:"#145a32", d:"По удаче дракона Поу должен найти и обучить нового героя, который защитит Долину Утиного Хруста."},
+  {id:"robot",   t:"Дикий робот",              y:2024, type:"film",  g:"Мультфильм", r:8.1, c1:"#5dade2", c2:"#0b3d4d", d:"Робот Роза выдыхается на необитаемом острове и учится выживать — а потом становится мамой для птенца гуся."},
+  {id:"inside",  t:"Головоломка 2",            y:2024, type:"film",  g:"Мультфильм", r:7.4, c1:"#f4d03f", c2:"#2c3e50", d:"В голове Райли появляется новое чувство — Тревога, и она берёт управление руля жизни подростка в свои руки."},
+  {id:"nosf",    t:"Носферату",                y:2024, type:"film",  g:"Хоррор",     r:6.8, c1:"#1c1c1c", c2:"#3d0000", d:"Вампир граф Орлок приехал из Карпат в Англию, чтобы отыскать Гильду — и принести тьму в её семью."},
+  {id:"heretic", t:"Еретик",                   y:2024, type:"film",  g:"Хоррор",     r:7.6, c1:"#4b0000", c2:"#0d0d0d", d:"Две сотрудницы агентства по недвижимости посещают клиента в его уютном домике — и обнаруживают, что он совсем не такой, как казался."},
+  {id:"long",    t:"Длинные ноги",             y:2024, type:"film",  g:"Хоррор",     r:7.7, c1:"#111111", c2:"#2e0000", d:"Специалист по раскрытию старых дел Лиэнн Гитц возвращается в родной городок, чтобы разобраться в деле серийного убийцы, который охотится и на неё."},
+  {id:"omen",    t:"Первое пророчество",       y:2024, type:"film",  g:"Хоррор",     r:7.0, c1:"#212f3d", c2:"#080404", d:"Молодому священнику и беременной женщине грозит та самая угроза, которая когда-то погубила всю их семью."}
+];
+var ROWS = [
+  {key:"trending",  t:"В тренде",     ids:["dune2","oppen","power","poor","brut","concl","lotus2","shogun"]},
+  {key:"new",       t:"Новинки",      ids:["room","pain","lotus","andor","brut","concl","lotus2","spider"]},
+  {key:"series",    t:"Сериалы",      ids:["lotus2","shogun","andor","lotus"]},
+  {key:"animation", t:"Мультфильмы",  ids:["spider","kung","robot","inside"]},
+  {key:"horror",    t:"Хорроры",      ids:["nosf","heretic","long","omen"]}
+];
+
+/* ================= SHA-256 (FIPS 180-4) ================= */
+function sha256hex(str){
+  var K = [
+           0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,
+           0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+           0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,
+           0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+           0xe49b69c1,0xefbe4786,0xfc19dc6,0x240ca1cc,
+           0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+           0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,
+           0xc6e00bf3,0xd5a79147,0x6ca6351,0x14292967,
+           0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,
+           0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+           0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,
+           0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+           0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,
+           0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+           0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,
+           0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+          ];
+  var H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  var bytes = new TextEncoder().encode(str);
+  var l = bytes.length;
+  var bitHi = Math.floor((l * 8) / 4294967296);
+  var bitLo = (l * 8) >>> 0;
+  var padLen = (56 - ((l + 1) % 64) + 64) % 64;
+  var total = l + 1 + padLen + 8;
+  var padded = new Uint8Array(total);
+  padded.set(bytes);
+  padded[l] = 0x80;
+  var dv = new DataView(padded.buffer);
+  dv.setUint32(total - 8, bitHi);
+  dv.setUint32(total - 4, bitLo);
+  function rotr(x, n){ return (x >>> n) | (x << (32 - n)); }
+  for (var off = 0; off < total; off += 64) {
+    var w = new Array(64);
+    for (var t = 0; t < 16; t++) w[t] = dv.getUint32(off + t * 4);
+    for (t = 16; t < 64; t++) {
+      var s0 = rotr(w[t-15], 7) ^ rotr(w[t-15], 18) ^ (w[t-15] >>> 3);
+      var s1 = rotr(w[t-2], 17) ^ rotr(w[t-2], 19) ^ (w[t-2] >>> 10);
+      w[t] = (w[t-16] + s0 + w[t-7] + s1) | 0;
+    }
+    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for (t = 0; t < 64; t++) {
+      var S1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25);
+      var ch = (e & f) ^ (~e & g);
+      var t1 = (h + S1 + ch + K[t] + w[t]) | 0;
+      var S0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22);
+      var maj = (a & b) ^ (a & c) ^ (b & c);
+      var t2 = (S0 + maj) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0;
+      d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0;
+    H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0;
+    H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  var out = "";
+  for (var i = 0; i < 8; i++) out += ("00000000" + (H[i] >>> 0).toString(16)).slice(-8);
+  return out;
+}
+
+/* ================= НАСТРОЙКИ / СЕССИЯ ================= */
+var CFG_KEY = "okko_cfg_v1";
+var LIST_KEY = "okko_list_v1";
+var SES_KEY = "okko_session_v1";
+var ADMIN_HASH = "edc6061065cdbdcdabbe787e25169b7a9d23d812452ccfab85b863cb5d3beb92";
+var DEF_CFG = { name:"okko", announce:"", featured:"dune2" };
+
+function loadJSON(key, def){
+  try {
+    var raw = localStorage.getItem(key);
+    if (!raw) return def;
+    var o = JSON.parse(raw);
+    return o || def;
+  } catch (e) { return def; }
+}
+function saveJSON(key, v){
+  try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) {}
+}
+var cfg = Object.assign({}, DEF_CFG, loadJSON(CFG_KEY, {}));
+var list = loadJSON(LIST_KEY, []);
+var loggedIn = (loadJSON(SES_KEY, "0") === "1");
+var currentCat = "trending";
+
+/* ================= УТИЛИТЫ ================= */
+function byId(id){
+  for (var i = 0; i < MOVIES.length; i++) if (MOVIES[i].id === id) return MOVIES[i];
+  return null;
+}
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function typeLabel(t){ return t === "series" ? "Сериал" : "Фильм"; }
+function inList(id){ return list.indexOf(id) !== -1; }
+function openM(id){ var m = document.getElementById(id); if (m) m.classList.add("open"); }
+function closeM(id){ var m = document.getElementById(id); if (m) m.classList.remove("open"); }
+
+/* ================= РЕНДЕР ================= */
+function cardHTML(m, flag){
+  var grad = "linear-gradient(135deg," + m.c1 + " 0%," + m.c2 + " 100%)";
+  var fl = flag ? '<span class="flag">' + esc(flag) + '</span>' : "";
+  return '<div class="card" data-id="' + m.id + '" style="background:' + grad + '">' +
+    '<div class="ph"><div class="t">' + esc(m.t) + '</div><div class="g">' + esc(m.g) + ' · ' + m.y + '</div></div>' +
+    '<span class="badge">★ ' + m.r + '</span>' + fl +
+    '<div class="playov"><span>▶</span></div>' +
+    '</div>';
+}
+function renderHero(){
+  var m = byId(cfg.featured) || MOVIES[0];
+  var grad = "linear-gradient(135deg," + m.c1 + " 0%,#0b0b0f 90%)";
+  var h = document.getElementById("hero");
+  h.style.background = grad;
+  h.innerHTML =
+    '<div class="veil"></div>' +
+    '<div class="hero-in">' +
+      '<span class="hero-tag">Выбор редакции</span>' +
+      '<h1>' + esc(m.t) + '</h1>' +
+      '<div class="meta">' +
+        '<span class="star">★ ' + m.r + '</span>' +
+        '<span class="chip">' + m.y + '</span>' +
+        '<span class="chip">' + typeLabel(m.type) + '</span>' +
+        '<span class="chip">' + esc(m.g) + '</span>' +
+      '</div>' +
+      '<p>' + esc(m.d) + '</p>' +
+      '<div class="hero-btns">' +
+        '<button class="btn-play" onclick="openPlayer(\'' + m.id + '\')">▶ Смотреть</button>' +
+        '<button class="btn-ghost' + (inList(m.id) ? ' inlist' : '') + '" onclick="toggleList(\'' + m.id + '\')">' + (inList(m.id) ? '✓ В списке' : '+ В мой список') + '</button>' +
+      '</div>' +
+    '</div>';
+}
+function renderRows(){
+  var wrap = document.getElementById("rowsWrap");
+  var html = "";
+  for (var i = 0; i < ROWS.length; i++) {
+    var row = ROWS[i];
+    var cards = "";
+    for (var j = 0; j < row.ids.length; j++) {
+      var m = byId(row.ids[j]);
+      if (!m) continue;
+      var isNew = (m.y >= 2024) ? "Новое" : "";
+      cards += cardHTML(m, isNew);
+    }
+    html += '<section class="section"><h2>' + esc(row.t) + '</h2><div class="row" data-row="' + row.key + '">' + cards + '</div></section>';
+  }
+  wrap.innerHTML = html;
+  bindCards(wrap);
+}
+function renderGrid(){
+  var sec = document.getElementById("gridSec");
+  var grid = document.getElementById("grid");
+  var title = document.getElementById("gridTitle");
+  var q = document.getElementById("search").value.trim().toLowerCase();
+  if (q) {
+    var found = [];
+    for (var i = 0; i < MOVIES.length; i++) {
+      var m = MOVIES[i];
+      if ((m.t + " " + m.g + " " + m.y).toLowerCase().indexOf(q) !== -1) found.push(m);
+    }
+    sec.style.display = "block";
+    document.getElementById("hero").style.display = "none";
+    document.getElementById("rowsWrap").style.display = "none";
+    title.textContent = "Результаты поиска: " + esc(q);
+    grid.innerHTML = found.length
+      ? found.map(function(m){ return cardHTML(m, ""); }).join("")
+      : '<div class="empty" style="grid-column:1/-1">Ничего не найдено. Попробуйте другой запрос.</div>';
+    bindCards(grid);
+    return;
+  }
+  sec.style.display = "none";
+  document.getElementById("hero").style.display = "flex";
+  document.getElementById("rowsWrap").style.display = "block";
+}
+function showRow(key){
+  currentCat = key;
+  var links = document.querySelectorAll("#nav a");
+  for (var i = 0; i < links.length; i++) {
+    links[i].className = (links[i].getAttribute("data-cat") === key) ? "on" : "";
+  }
+  var q = document.getElementById("search");
+  q.value = "";
+  document.getElementById("hero").style.display = "flex";
+  document.getElementById("rowsWrap").style.display = "block";
+  document.getElementById("gridSec").style.display = "none";
+  if (key === "mylist") {
+    document.getElementById("hero").style.display = "none";
+    document.getElementById("rowsWrap").style.display = "none";
+    document.getElementById("gridSec").style.display = "block";
+    document.getElementById("gridTitle").textContent = "Мой список";
+    var grid = document.getElementById("grid");
+    var items = list.map(byId).filter(function(m){ return !!m; });
+    grid.innerHTML = items.length
+      ? items.map(function(m){ return cardHTML(m, ""); }).join("")
+      : '<div class="empty" style="grid-column:1/-1">Список пуст. Добавляйте фильмы кнопкой «+ В мой список».</div>';
+    bindCards(grid);
+    return;
+  }
+  var target = null;
+  for (var r = 0; r < ROWS.length; r++) if (ROWS[r].key === key) target = ROWS[r];
+  if (target) {
+    var el = document.querySelector('[data-row="' + key + '"]');
+    if (el) el.scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+}
+function bindCards(root){
+  var cards = root.querySelectorAll(".card");
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].onclick = (function(id){
+      return function(){ openCard(id); };
+    })(cards[i].getAttribute("data-id"));
+  }
+}
+
+/* ================= КАРТОЧКА ================= */
+function openCard(id){
+  var m = byId(id);
+  if (!m) return;
+  var grad = "linear-gradient(135deg," + m.c1 + " 0%," + m.c2 + " 100%)";
+  var body = document.getElementById("cardBody");
+  body.innerHTML =
+    '<div class="d-poster" style="background:' + grad + '">' +
+      '<div class="t">' + esc(m.t) + '</div>' +
+      '<span class="badge">★ ' + m.r + '</span>' +
+    '</div>' +
+    '<div class="d-rows">' +
+      '<span class="chip" style="background:rgba(255,255,255,.08);border:1px solid var(--line);padding:4px 12px;border-radius:14px;font-size:13px">' + m.y + '</span>' +
+      '<span class="chip" style="background:rgba(255,255,255,.08);border:1px solid var(--line);padding:4px 12px;border-radius:14px;font-size:13px">' + typeLabel(m.type) + '</span>' +
+      '<span class="chip" style="background:rgba(255,255,255,.08);border:1px solid var(--line);padding:4px 12px;border-radius:14px;font-size:13px">' + esc(m.g) + '</span>' +
+    '</div>' +
+    '<div class="d-desc">' + esc(m.d) + '</div>' +
+    '<div class="d-btns">' +
+      '<button class="btn-play" onclick="openPlayer(\'' + m.id + '\')">▶ Смотреть</button>' +
+      '<button class="btn-ghost' + (inList(m.id) ? ' inlist' : '') + '" id="dListBtn" onclick="toggleList(\'' + m.id + '\')">' + (inList(m.id) ? '✓ В списке' : '+ В мой список') + '</button>' +
+    '</div>';
+  openM("cardM");
+}
+
+/* ================= ПЛЕЕР ================= */
+function openPlayer(id){
+  var m = byId(id) || MOVIES[0];
+  closeM("cardM");
+  document.getElementById("pTitle").textContent = m.t;
+  document.getElementById("pYear").textContent = "★ " + m.r + " · " + m.y;
+  openM("playerM");
+  var v = document.getElementById("playerV");
+  try { var p = v.play(); if (p && p.catch) p.catch(function(){}); } catch (e) {}
+}
+function stopPlayer(){
+  var v = document.getElementById("playerV");
+  try { v.pause(); } catch (e) {}
+  closeM("playerM");
+}
+
+/* ================= МОЙ СПИСОК ================= */
+function toggleList(id){
+  var i = list.indexOf(id);
+  if (i === -1) list.push(id); else list.splice(i, 1);
+  saveJSON(LIST_KEY, list);
+  refreshListButtons(id);
+  if (currentCat === "mylist") showRow("mylist");
+}
+function refreshListButtons(id){
+  var btn = document.getElementById("dListBtn");
+  if (btn) btn.innerHTML = inList(id) ? "✓ В списке" : "+ В мой список";
+  var hb = document.querySelector("#hero .btn-ghost");
+  renderHero();
+}
+
+/* ================= ВХОД / ВЫХОД ================= */
+function doLogin(ev){
+  ev.preventDefault();
+  var login = document.getElementById("liLogin").value.trim().toLowerCase();
+  var pass = document.getElementById("liPass").value;
+  var err = document.getElementById("liErr");
+  if (login === "admin" && sha256hex(pass) === ADMIN_HASH) {
+    saveJSON(SES_KEY, "1");
+    loggedIn = true;
+    closeM("loginM");
+    err.textContent = "";
+    document.getElementById("liPass").value = "";
+    renderUserbox();
+    renderHero();
+  } else {
+    err.textContent = "Неверный логин или пароль";
+  }
+}
+function logout(){
+  saveJSON(SES_KEY, "0");
+  loggedIn = false;
+  renderUserbox();
+}
+function renderUserbox(){
+  var box = document.getElementById("userbox");
+  var fa = document.getElementById("fAccount");
+  if (loggedIn) {
+    box.innerHTML = '<span class="userchip"><span class="avatar">A</span>admin <button class="logout" onclick="logout()" title="Выйти">✕</button></span>' +
+      '<button class="btn-login" onclick="openAdmin()" style="background:var(--bg2);border:1px solid var(--line)">⚙</button>';
+    fa.textContent = "Аккаунт: admin";
+  } else {
+    box.innerHTML = '<button class="btn-login" onclick="openM(\'loginM\')">Войти</button>';
+    fa.textContent = "Войти";
+  }
+}
+
+/* ================= АДМИНКА ================= */
+function openAdmin(){
+  if (!loggedIn) { openM("loginM"); return; }
+  document.getElementById("cName").value = cfg.name;
+  document.getElementById("cAnn").value = cfg.announce || "";
+  var sel = document.getElementById("cFeat");
+  var opts = "";
+  for (var i = 0; i < MOVIES.length; i++) {
+    var m = MOVIES[i];
+    opts += '<option value="' + m.id + '"' + (m.id === cfg.featured ? ' selected' : '') + '>' + esc(m.t) + ' (' + m.y + ')</option>';
+  }
+  sel.innerHTML = opts;
+  openM("admM");
+}
+function saveCfg(ev){
+  ev.preventDefault();
+  var name = document.getElementById("cName").value.trim() || "okko";
+  var ann = document.getElementById("cAnn").value.trim();
+  var feat = document.getElementById("cFeat").value || "dune2";
+  cfg = { name: name, announce: ann, featured: feat };
+  saveJSON(CFG_KEY, cfg);
+  applyCfg();
+  renderHero();
+  document.getElementById("cErr").textContent = "Сохранено ✓";
+}
+function resetCfg(){
+  cfg = Object.assign({}, DEF_CFG);
+  saveJSON(CFG_KEY, cfg);
+  applyCfg();
+  renderHero();
+  document.getElementById("cName").value = cfg.name;
+  document.getElementById("cAnn").value = "";
+  document.getElementById("cFeat").value = cfg.featured;
+  document.getElementById("cErr").textContent = "Сброшено по умолчанию";
+}
+function applyCfg(){
+  document.title = cfg.name + " — кино и сериалы";
+  document.getElementById("logoEl").innerHTML = '<b>' + esc(cfg.name.slice(0,2)) + '</b>' + esc(cfg.name.slice(2));
+  var ann = document.getElementById("announce");
+  if (cfg.announce) { ann.textContent = cfg.announce; ann.classList.remove("hidden"); }
+  else ann.classList.add("hidden");
+}
+
+/* ================= СТАРТ ================= */
+(function init(){
+  applyCfg();
+  renderUserbox();
+  renderHero();
+  renderRows();
+  var nav = document.getElementById("nav");
+  var links = nav.querySelectorAll("a");
+  for (var i = 0; i < links.length; i++) {
+    links[i].onclick = (function(key){
+      return function(e){ e.preventDefault(); showRow(key); };
+    })(links[i].getAttribute("data-cat"));
+  }
+  document.getElementById("search").oninput = renderGrid;
+  document.getElementById("logoEl").onclick = function(){ showRow("trending"); window.scrollTo({top:0, behavior:"smooth"}); };
+  document.getElementById("fAdmin").onclick = function(){ openAdmin(); };
+  document.getElementById("fAccount").onclick = function(e){ e.preventDefault(); if (loggedIn) showRow("mylist"); else openM("loginM"); };
+  var goLinks = document.querySelectorAll("[data-go]");
+  for (var g = 0; g < goLinks.length; g++) {
+    goLinks[g].onclick = (function(key){
+      return function(e){ e.preventDefault(); showRow(key); };
+    })(goLinks[g].getAttribute("data-go"));
+  }
+  var allM = document.querySelectorAll(".modal");
+  for (var mm = 0; mm < allM.length; mm++) {
+    allM[mm].addEventListener("click", function(e){
+      if (e.target === this) { if (this.id === "playerM") stopPlayer(); else this.classList.remove("open"); }
+    });
+  }
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape") { stopPlayer(); closeM("loginM"); closeM("cardM"); closeM("admM"); }
+  });
+})();
+</script>
+</body>
+</html>
